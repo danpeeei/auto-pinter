@@ -54,7 +54,7 @@ class AutoPinter:
         LOG.info(f"found {n} boards")
         for i, board in enumerate(boards, start=1):
             self._add_pin_to_board(board)
-            LOG.info(f"({i}/{n}) {parse_board_name(board)}: ok")
+            LOG.info(f"({i}/{n}) board '{parse_board_name(board)}': ok")
         LOG.info(f"successfully updated {n} boards")
 
     def close(self):
@@ -72,11 +72,7 @@ class AutoPinter:
 
         self._click_by_test_id("registerFormSubmitButton")
 
-        url = self._driver.current_url
-        if url == BASE_URL:
-            LOG.error("failed to log in")
-            # raise RuntimeError("failed to log in")
-        LOG.info(f"logged in. current url: {url}")
+        LOG.info("logged in")
 
     def _show_saved_contents(self):
         # move to profile
@@ -126,7 +122,6 @@ def main():
 
     pinter = AutoPinter(args.debug)
     try:
-        print("loggin", args.user, f"'{args.password}'")
         pinter.start_process(args.user, args.password)
     except Exception as e:
         LOG.error(e)

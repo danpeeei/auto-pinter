@@ -15,11 +15,11 @@ LOG = logging.getLogger(__name__)
 
 
 class AutoPinter:
-    def __init__(self, headless: bool = False) -> None:
+    def __init__(self, debug: bool = True) -> None:
         options = Options()
-        if headless:
+        if not debug:
             options.add_argument("--headless")
-        self._driver = webdriver.Chrome(chrome_options=options)
+        self._driver = webdriver.Chrome(options=options)
         self._driver.get(BASE_URL)
         self._driver.implicitly_wait(10)
 

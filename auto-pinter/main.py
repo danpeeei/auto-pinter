@@ -52,9 +52,9 @@ class AutoPinter:
         boards = self._get_board_list()
         n = len(boards)
         LOG.info(f"found {n} boards")
-        for i, board in enumerate(boards):
+        for i, board in enumerate(boards, start=1):
             self._add_pin_to_board(board)
-            LOG.info(f"({i+1}/{n}) {parse_board_name(board)}: ok")
+            LOG.info(f"({i}/{n}) {parse_board_name(board)}: ok")
         LOG.info(f"successfully updated {n} boards")
 
     def close(self):

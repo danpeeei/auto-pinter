@@ -1,7 +1,10 @@
 import logging
 from argparse import ArgumentParser
 
-import chromedriver_binary  # noqa: F401
+try:
+    import chromedriver_binary  # noqa: F401
+except Exception:
+    pass
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By

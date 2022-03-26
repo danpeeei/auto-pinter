@@ -35,10 +35,13 @@ class AutoPinter:
 
     def start(self, user: str, password: str):
         self.login(user, password)
+        LOG.info("successfully logged in")
         boards = self.get_board_list()
+        n = len(boards)
+        LOG.info(f"found {n} boards")
         for board in boards:
             self.add_pin_to_board(board)
-        LOG.info(f"updated {len(boards)} boards ")
+        LOG.info(f"successfully updated {n} boards")
 
     def close(self):
         self._driver.close()
@@ -66,8 +69,7 @@ class AutoPinter:
         # 先頭は"すべてのピン"のため無視
         for board in boards[1:]:
             a: WebElement = board.find_element(By.TAG_NAME, "a")
-            href = a.get_attribute("href")
-            result.append(href)
+            result.append(a.get_attribute("href"))
         return result
 
     def add_pin_to_board(self, board_url: str):
@@ -88,6 +90,8 @@ class AutoPinter:
             self._driver.close()
             self._driver.switch_to.window(self._driver.window_handles[0])
 
+        LOG.info(f"{board_url}: ok")
+
 
 def main():
     parser = ArgumentParser("auto-pinter")
@@ -98,7 +102,7 @@ def main():
 
     pinter = AutoPinter(args.debug)
     try:
-        pinter.start()
+        pinter.start(args.user, args.password)
     except Exception as e:
         LOG.error(e)
     finally:

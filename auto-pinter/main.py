@@ -1,5 +1,6 @@
 import logging
 from argparse import ArgumentParser
+from urllib.parse import unquote
 
 try:
     import chromedriver_binary  # noqa: F401
@@ -10,13 +11,24 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.remote.webelement import WebElement
 
-BASE_URL = "https://www.pinterest.jp"
+BASE_URL = "https://www.pinterest.jp/"
 LOG = logging.getLogger(__name__)
+
+logging.basicConfig(level=logging.INFO)
+
+
+def parse_board_name(url: str):
+    decoded = unquote(url)
+    decoded.rstrip("/")
+    return decoded.split("/")[-1]
 
 
 class AutoPinter:
     def __init__(self, debug: bool = True) -> None:
         options = Options()
+        options.add_argument("--no-sandbox")
+        options.add_argument("--window-size=1920,1080")
+        options.add_argument("--disable-gpu")
         if not debug:
             options.add_argument("--headless")
         self._driver = webdriver.Chrome(options=options)
@@ -34,14 +46,16 @@ class AutoPinter:
 
     def start_process(self, user: str, password: str):
         """各ボードに対しておすすめのピンを追加する"""
+        self._open()
         self._login(user, password)
         self._show_saved_contents()
 
         boards = self._get_board_list()
         n = len(boards)
         LOG.info(f"found {n} boards")
-        for board in boards:
+        for i, board in enumerate(boards):
             self._add_pin_to_board(board)
+            LOG.info(f"({i+1}/{n}) {parse_board_name(board)}: ok")
         LOG.info(f"successfully updated {n} boards")
 
     def close(self):
@@ -59,7 +73,11 @@ class AutoPinter:
 
         self._click_by_test_id("registerFormSubmitButton")
 
-        LOG.info(f"logged in. current url: {self._driver.current_url}")
+        url = self._driver.current_url
+        if url == BASE_URL:
+            LOG.error("failed to log in")
+            # raise RuntimeError("failed to log in")
+        LOG.info(f"logged in. current url: {url}")
 
     def _show_saved_contents(self):
         # move to profile
@@ -99,8 +117,6 @@ class AutoPinter:
             self._driver.close()
             self._driver.switch_to.window(self._driver.window_handles[0])
 
-        LOG.info(f"{board_url}: ok")
-
 
 def main():
     parser = ArgumentParser("auto-pinter")
@@ -111,6 +127,7 @@ def main():
 
     pinter = AutoPinter(args.debug)
     try:
+        print("loggin", args.user, f"'{args.password}'")
         pinter.start_process(args.user, args.password)
     except Exception as e:
         LOG.error(e)

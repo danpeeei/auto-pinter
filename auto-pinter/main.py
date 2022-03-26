@@ -20,48 +20,57 @@ class AutoPinter:
         if not debug:
             options.add_argument("--headless")
         self._driver = webdriver.Chrome(options=options)
-        self._driver.get(BASE_URL)
         self._driver.implicitly_wait(10)
 
-    def fill_input_by_test_id(self, text: str, test_id: str):
+    def _fill_input_by_test_id(self, text: str, test_id: str):
         input = self._driver.find_element(
             By.XPATH, f'//*[@data-test-id="{test_id}"]'
         ).find_element(By.TAG_NAME, "input")
         input.send_keys(text)
 
-    def click_by_test_id(self, test_id: str):
+    def _click_by_test_id(self, test_id: str):
         button = self._driver.find_element(By.XPATH, f"//*[@data-test-id='{test_id}']")
         button.click()
 
-    def start(self, user: str, password: str):
-        self.login(user, password)
-        LOG.info("successfully logged in")
-        boards = self.get_board_list()
+    def start_process(self, user: str, password: str):
+        """各ボードに対しておすすめのピンを追加する"""
+        self._login(user, password)
+        self._show_saved_contents()
+
+        boards = self._get_board_list()
         n = len(boards)
         LOG.info(f"found {n} boards")
         for board in boards:
-            self.add_pin_to_board(board)
+            self._add_pin_to_board(board)
         LOG.info(f"successfully updated {n} boards")
 
     def close(self):
         self._driver.close()
 
-    def login(self, username: str, password: str):
-        """ログイン"""
-        self.click_by_test_id("simple-login-button")
+    def _open(self):
+        self._driver.get(BASE_URL)
+        LOG.info(f"successfully opened {BASE_URL}")
 
-        self.fill_input_by_test_id(username, "emailInputField")
-        self.fill_input_by_test_id(password, "passwordInputField")
+    def _login(self, username: str, password: str):
+        self._click_by_test_id("simple-login-button")
 
-        self.click_by_test_id("registerFormSubmitButton")
+        self._fill_input_by_test_id(username, "emailInputField")
+        self._fill_input_by_test_id(password, "passwordInputField")
 
+        self._click_by_test_id("registerFormSubmitButton")
+
+        LOG.info(f"logged in. current url: {self._driver.current_url}")
+
+    def _show_saved_contents(self):
         # move to profile
-        self.click_by_test_id("header-profile")
+        self._click_by_test_id("header-profile")
 
         # show saved contents
         self._driver.find_element(By.ID, "_saved-profile-tab").click()
 
-    def get_board_list(self):
+        LOG.info(f"showed saved contents. current url: {self._driver.current_url}")
+
+    def _get_board_list(self):
         boards = self._driver.find_elements(
             By.XPATH, "//*[@data-test-id='pwt-grid-item']"
         )
@@ -72,7 +81,7 @@ class AutoPinter:
             result.append(a.get_attribute("href"))
         return result
 
-    def add_pin_to_board(self, board_url: str):
+    def _add_pin_to_board(self, board_url: str):
         # "おすすめのアイデア"を新規タブで開く
         try:
             url = board_url + "_tools/more-ideas/?ideas_referrer=2"
@@ -102,7 +111,7 @@ def main():
 
     pinter = AutoPinter(args.debug)
     try:
-        pinter.start(args.user, args.password)
+        pinter.start_process(args.user, args.password)
     except Exception as e:
         LOG.error(e)
     finally:

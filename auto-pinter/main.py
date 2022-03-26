@@ -1,3 +1,4 @@
+import logging
 from argparse import ArgumentParser
 
 import chromedriver_binary  # noqa: F401
@@ -11,6 +12,9 @@ driver.get(BASE_URL)
 driver.implicitly_wait(10)
 
 board_tab = None
+
+
+LOG = logging.getLogger(__name__)
 
 
 def fill_input_by_test_id(text: str, test_id: str):
@@ -37,6 +41,9 @@ def login(username: str, password: str):
     # move to profile
     click_by_test_id("header-profile")
 
+    # show saved contents
+    driver.find_element(By.ID, "_saved-profile-tab").click()
+
 
 def get_board_list():
     boards = driver.find_elements(By.XPATH, "//*[@data-test-id='pwt-grid-item']")
@@ -60,8 +67,8 @@ def add_pin_to_board(board_url: str):
         pin = driver.find_element(By.XPATH, "//*[@data-test-id='pin']")
         save = pin.find_element(By.XPATH, "//div[@aria-label='保存']")
         save.click()
-    except Exception:
-        pass
+    except Exception as e:
+        LOG.error(e)
     finally:
         # タブを閉じる
         driver.close()
@@ -75,8 +82,10 @@ def main():
     args = parser.parse_args()
 
     login(args.user, args.password)
-    for board in get_board_list():
+    boards = get_board_list()
+    for board in boards:
         add_pin_to_board(board)
+    LOG.info(f"updated {len(boards)} boards ")
 
 
 if __name__ == "__main__":

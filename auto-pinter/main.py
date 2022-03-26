@@ -18,8 +18,7 @@ logging.basicConfig(level=logging.INFO)
 
 
 def parse_board_name(url: str):
-    decoded = unquote(url)
-    decoded.rstrip("/")
+    decoded = unquote(url).rstrip("/")
     return decoded.split("/")[-1]
 
 
